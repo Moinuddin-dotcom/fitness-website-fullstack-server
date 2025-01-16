@@ -30,6 +30,16 @@ async function run() {
         const database = client.db('gymDB')
         const userCollection = database.collection('users')
 
+        // save all logged in user in the database
+        app.post('/users', async (req, res) => {
+            const user = req.body
+            const query = { email: user?.email }
+            const existingUser = await userCollection.findOne(query)
+            if (existingUser) return res.send({ message: "User already exists", insertedId: null })
+            const result = await userCollection.insertOne(user)
+            res.send(result);
+        })
+
 
 
 
