@@ -30,6 +30,7 @@ async function run() {
         const database = client.db('gymDB')
         const userCollection = database.collection('users')
         const subscriberCollection = database.collection('subscribers')
+        const trainerCollection = database.collection('trainers')
 
         // save all logged in user in the database
         app.post('/users', async (req, res) => {
@@ -41,6 +42,12 @@ async function run() {
             res.send(result);
         })
 
+        // get logged in user info from database
+        app.get('/users', async (req, res) => {
+            const user = await userCollection.find().toArray()
+            res.send(user);
+        })
+
         //save all subscriber on database
         app.post('/subscribers', async (req, res) => {
             const subscriber = req.body
@@ -50,6 +57,20 @@ async function run() {
             res.send(result);
         })
 
+        // post trainer request on database
+        app.post('/trainers', async (req, res) => {
+            const trainer = req.body
+            const existingTrainer = await trainerCollection.findOne({ email: trainer.email })
+            if (existingTrainer) return res.send({ message: "Trainer already exists", insertedId: null })
+            const result = await trainerCollection.insertOne(trainer)
+            res.send(result);
+        })
+
+        // get applied trainer info from database
+        app.get('/trainers', async (req, res) => {
+            const trainer = await trainerCollection.find().toArray()
+            res.send(trainer);
+        })
 
 
 
