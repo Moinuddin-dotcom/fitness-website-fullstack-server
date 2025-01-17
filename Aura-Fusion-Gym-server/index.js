@@ -29,6 +29,7 @@ async function run() {
         // await client.connect();
         const database = client.db('gymDB')
         const userCollection = database.collection('users')
+        const subscriberCollection = database.collection('subscribers')
 
         // save all logged in user in the database
         app.post('/users', async (req, res) => {
@@ -37,6 +38,15 @@ async function run() {
             const existingUser = await userCollection.findOne(query)
             if (existingUser) return res.send({ message: "User already exists", insertedId: null })
             const result = await userCollection.insertOne(user)
+            res.send(result);
+        })
+
+        //save all subscriber on database
+        app.post('/subscribers', async (req, res) => {
+            const subscriber = req.body
+            const existingSubscriber = await subscriberCollection.findOne({ email: subscriber.email })
+            if (existingSubscriber) return res.send({ message: "User already exists", insertedId: null })
+            const result = await subscriberCollection.insertOne(subscriber)
             res.send(result);
         })
 
