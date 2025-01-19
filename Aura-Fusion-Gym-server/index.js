@@ -2,7 +2,8 @@ const express = require('express')
 const app = express();
 const cors = require('cors')
 require('dotenv').config()
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 8002
 
 // middleware
@@ -32,6 +33,30 @@ async function run() {
         const subscriberCollection = database.collection('subscribers')
         const trainerCollection = database.collection('trainers')
 
+        // jwt token for authorization (localStorage)
+        app.post('/jwt', async (req, res) => {
+            const user = req.body
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "365d" })
+            res.send({ token });
+        })
+
+        // jwt middleware: verifyToken
+        const verifyToken = (req, res, next) => {
+            console.log("Inside the verifyToken:", req.headers.authorization)
+            if (!req.headers.authorization) {
+                return res.status(401).send({ message: "Forbidden access" })
+            }
+            const token = req.headers.authorization.split(' ')[1]
+            jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+                if (err) {
+                    return res.status(401).send({ message: "Forbidden access" })
+                }
+                req.decoded = decoded
+                next()
+            })
+        }
+
+
         // save all logged in user in the database
         app.post('/users', async (req, res) => {
             const user = req.body
@@ -46,6 +71,15 @@ async function run() {
         app.get('/users', async (req, res) => {
             const user = await userCollection.find().toArray()
             res.send(user);
+        })
+
+        // get user role by email
+        app.get('/users/role/:email', async (req, res) => {
+            const email = req.params.email
+            // console.log(email)
+            const query = { email }
+            const result = await userCollection.findOne(query)
+            res.send({ role: result?.role });
         })
 
         //save all subscriber on database
@@ -67,8 +101,18 @@ async function run() {
         })
 
         // get applied trainer info from database
-        app.get('/trainers', async (req, res) => {
+        app.get('/trainers', verifyToken, async (req, res) => {
+            // const id = req.params.id
+            // const query = { _id: new ObjectId(id) }
             const trainer = await trainerCollection.find().toArray()
+            res.send(trainer);
+        })
+
+        // admin section: get applied trainer details
+        app.get('/trainers/:id', async (req, res) => {
+            const id = req.params.id
+            const query = { _id: new ObjectId(id) }
+            const trainer = await trainerCollection.findOne(query)
             res.send(trainer);
         })
 
