@@ -42,14 +42,14 @@ async function run() {
 
         // jwt middleware: verifyToken
         const verifyToken = (req, res, next) => {
-            console.log("Inside the verifyToken:", req.headers.authorization)
+            // console.log("Inside the verifyToken:", req.headers.authorization)
             if (!req.headers.authorization) {
-                return res.status(401).send({ message: "Forbidden access" })
+                return res.status(401).send({ message: "Unauthorized access" })
             }
             const token = req.headers.authorization.split(' ')[1]
             jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
                 if (err) {
-                    return res.status(401).send({ message: "Forbidden access" })
+                    return res.status(401).send({ message: "Unauthorized access" })
                 }
                 req.decoded = decoded
                 next()
@@ -79,6 +79,7 @@ async function run() {
             // console.log(email)
             const query = { email }
             const result = await userCollection.findOne(query)
+            // console.log(result)
             res.send({ role: result?.role });
         })
 
@@ -100,12 +101,18 @@ async function run() {
             res.send(result);
         })
 
-        // get applied trainer info from database
-        app.get('/trainers', verifyToken, async (req, res) => {
-            // const id = req.params.id
-            // const query = { _id: new ObjectId(id) }
-            const trainer = await trainerCollection.find().toArray()
-            res.send(trainer);
+        // get applied-trainers from database and show all data without admin data
+        app.get('/applied-trainers/:email', verifyToken, async (req, res) => {
+            const email = req.params.email
+            const query = { email: { $ne: email } } // ($ne:) means not equal to
+            const withOutAdminEmail = await trainerCollection.find(query).toArray() // vaiya use userCollection here, i am thinking if i get data from userCollection and fetch them on frontend side then i will get the userCollection data but then how can i get trainerCollection data because i need trainerCollection details
+            res.send(withOutAdminEmail);
+        })
+
+        // get applied trainer data in ActivityLog info from database
+        app.get('/applied-trainers', verifyToken, async (req, res) => {
+            const approvedTrainerStatus = await trainerCollection.find().toArray()
+            res.send(approvedTrainerStatus);
         })
 
         // admin section: get applied trainer details
