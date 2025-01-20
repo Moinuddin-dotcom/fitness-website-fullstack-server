@@ -58,7 +58,7 @@ async function run() {
 
 
         // save all logged in user in the database
-        app.post('/users', async (req, res) => {
+        app.post('/users', verifyToken, async (req, res) => {
             const user = req.body
             const query = { email: user?.email }
             const existingUser = await userCollection.findOne(query)
@@ -74,14 +74,13 @@ async function run() {
         })
 
 
-
+        // updateing be a trainer data info in userCollection database for be a trainer application
         app.patch('/users-from/:email', verifyToken, async (req, res) => {
             const trainerInfo = req.body;
             const { email } = req.params
             const updateInfo = {
                 $set: {
                     ...trainerInfo,
-                    // trainerRequest: true, // Mark the user has requested trainer status
                 },
             }
             const result = await userCollection.updateOne({ email: email }, updateInfo)
@@ -97,17 +96,6 @@ async function run() {
             // console.log(result)
             res.send({ role: result?.role });
         })
-
-
-
-        // post trainer request on database
-        // app.post('/trainers', async (req, res) => {
-        //     const trainer = req.body
-        //     const existingTrainer = await trainerCollection.findOne({ email: trainer.email })
-        //     if (existingTrainer) return res.send({ message: "Trainer already exists", insertedId: null })
-        //     const result = await trainerCollection.insertOne(trainer)
-        //     res.send(result);
-        // })
 
 
 
@@ -129,7 +117,35 @@ async function run() {
         })
 
 
-        // Update
+        // Update user role & status by admin(role: member to trainer & status: Pending to Approved)
+        app.patch('/users-role-update/:email', verifyToken, async (req, res) => {
+            const { role } = req.body
+            const email = req.params.email
+            const filter = { email }
+            const updateRole = {
+                $set: {
+                    role,
+                    status: 'Approved'
+                },
+            }
+            const result = await userCollection.updateOne(filter, updateRole)
+            res.send(result)
+        })
+
+
+        // Update: applied user status & rejection by admin(rejection message & status: Pending to Reject)
+        app.patch('/users-role-updateForReject/:email', verifyToken, async (req, res) => {
+            const rejectInfo = req.body
+            const { email } = req.params
+            // const filter = { email }
+            const updateRejectedUserRole = {
+                $set: {
+                    ...rejectInfo, status: 'Reject',
+                },
+            }
+            const result = await userCollection.updateOne({ email: email }, updateRejectedUserRole)
+            res.send(result)
+        })
 
 
 
