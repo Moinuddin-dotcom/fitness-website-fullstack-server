@@ -73,6 +73,21 @@ async function run() {
             res.send(user);
         })
 
+
+
+        app.patch('/users-from/:email', verifyToken, async (req, res) => {
+            const trainerInfo = req.body;
+            const { email } = req.params
+            const updateInfo = {
+                $set: {
+                    ...trainerInfo,
+                    // trainerRequest: true, // Mark the user has requested trainer status
+                },
+            }
+            const result = await userCollection.updateOne({ email: email }, updateInfo)
+            res.send(result)
+        })
+
         // get user role by email
         app.get('/users/role/:email', async (req, res) => {
             const email = req.params.email
@@ -83,6 +98,47 @@ async function run() {
             res.send({ role: result?.role });
         })
 
+
+
+        // post trainer request on database
+        // app.post('/trainers', async (req, res) => {
+        //     const trainer = req.body
+        //     const existingTrainer = await trainerCollection.findOne({ email: trainer.email })
+        //     if (existingTrainer) return res.send({ message: "Trainer already exists", insertedId: null })
+        //     const result = await trainerCollection.insertOne(trainer)
+        //     res.send(result);
+        // })
+
+
+
+
+        // get applied-trainers from database and show all data without admin data
+        app.get('/users/:email', verifyToken, async (req, res) => {
+            const email = req.params.email
+            const query = { email: { $ne: email } } // ($ne:) means not equal to
+            const withOutAdminEmail = await userCollection.find(query).toArray()
+            res.send(withOutAdminEmail);
+        })
+
+        // admin section: get applied trainer details
+        app.get('/users-details/:id', verifyToken, async (req, res) => {
+            const id = req.params.id
+            const query = { _id: new ObjectId(id) }
+            const trainer = await userCollection.findOne(query)
+            res.send(trainer);
+        })
+
+
+        // Update
+
+
+
+
+
+
+
+
+
         //save all subscriber on database
         app.post('/subscribers', async (req, res) => {
             const subscriber = req.body
@@ -90,37 +146,6 @@ async function run() {
             if (existingSubscriber) return res.send({ message: "User already exists", insertedId: null })
             const result = await subscriberCollection.insertOne(subscriber)
             res.send(result);
-        })
-
-        // post trainer request on database
-        app.post('/trainers', async (req, res) => {
-            const trainer = req.body
-            const existingTrainer = await trainerCollection.findOne({ email: trainer.email })
-            if (existingTrainer) return res.send({ message: "Trainer already exists", insertedId: null })
-            const result = await trainerCollection.insertOne(trainer)
-            res.send(result);
-        })
-
-        // get applied-trainers from database and show all data without admin data
-        app.get('/applied-trainers/:email', verifyToken, async (req, res) => {
-            const email = req.params.email
-            const query = { email: { $ne: email } } // ($ne:) means not equal to
-            const withOutAdminEmail = await trainerCollection.find(query).toArray() // vaiya use userCollection here, i am thinking if i get data from userCollection and fetch them on frontend side then i will get the userCollection data but then how can i get trainerCollection data because i need trainerCollection details
-            res.send(withOutAdminEmail);
-        })
-
-        // get applied trainer data in ActivityLog info from database
-        app.get('/applied-trainers', verifyToken, async (req, res) => {
-            const approvedTrainerStatus = await trainerCollection.find().toArray()
-            res.send(approvedTrainerStatus);
-        })
-
-        // admin section: get applied trainer details
-        app.get('/trainers/:id', async (req, res) => {
-            const id = req.params.id
-            const query = { _id: new ObjectId(id) }
-            const trainer = await trainerCollection.findOne(query)
-            res.send(trainer);
         })
 
 
