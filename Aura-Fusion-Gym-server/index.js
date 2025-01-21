@@ -58,7 +58,7 @@ async function run() {
 
 
         // save all logged in user in the database
-        app.post('/users', verifyToken, async (req, res) => {
+        app.post('/users', async (req, res) => {
             const user = req.body
             const query = { email: user?.email }
             const existingUser = await userCollection.findOne(query)
@@ -145,6 +145,28 @@ async function run() {
             }
             const result = await userCollection.updateOne({ email: email }, updateRejectedUserRole)
             res.send(result)
+        })
+
+        // member section: get trainer data on All trainer section by ROLE
+        app.get('/users/all-trainers/role', verifyToken, async (req, res) => {
+            const { role } = req.query
+
+            let query = {}
+            if (role) {
+                query.role = role
+            }
+            // console.log("Query:", query);
+            const result = await userCollection.find(query).toArray()
+            // console.log("Result:", result);
+            res.send(result);
+        })
+
+        // member section: get applied trainer details
+        app.get('/trainerDetails/:id', verifyToken, async (req, res) => {
+            const id = req.params.id
+            const query = { _id: new ObjectId(id) }
+            const trainer = await userCollection.findOne(query)
+            res.send(trainer);
         })
 
 
