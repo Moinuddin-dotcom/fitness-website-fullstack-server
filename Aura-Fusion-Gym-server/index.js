@@ -31,7 +31,7 @@ async function run() {
         const database = client.db('gymDB')
         const userCollection = database.collection('users')
         const subscriberCollection = database.collection('subscribers')
-        const trainerCollection = database.collection('trainers')
+        const bookedTrainerCollection = database.collection('bookedTrainers')
 
         // jwt token for authorization (localStorage)
         app.post('/jwt', async (req, res) => {
@@ -131,6 +131,21 @@ async function run() {
             const result = await userCollection.updateOne(filter, updateRole)
             res.send(result)
         })
+        // Update trainer role & status by admin(role: trainer to member & status: Approved to "" )
+        app.patch('/trainer-role-update/:email', verifyToken, async (req, res) => {
+            const { role } = req.body
+            const email = req.params.email
+            // const filter = { emaildata: email }
+            const filter = { email }
+            const updateRole = {
+                $set: {
+                    role,
+                    status: " "
+                },
+            }
+            const result = await userCollection.updateOne(filter, updateRole)
+            res.send(result)
+        })
 
 
         // Update: applied user status & rejection by admin(rejection message & status: Pending to Reject)
@@ -167,6 +182,27 @@ async function run() {
             const query = { _id: new ObjectId(id) }
             const trainer = await userCollection.findOne(query)
             res.send(trainer);
+        })
+
+        // booking trainer details in db
+        app.post('/book-trainer', verifyToken, async (req, res) => {
+            // const { trainerId, trainerDay } = req.body
+            const trainerInfo = req.body
+            // getting user email
+            const userEmail = req.decoded.email
+            // finding trainer by id
+            const query = { _id: new ObjectId(trainerInfo.trainerId) }
+            const trainer = await userCollection.findOne(query)
+
+            // saving trainer details on new collection db
+            const bookingDetails = {
+                trainerId: new ObjectId(trainerInfo.trainerId),
+                userEmail,
+                trainerDay: trainerInfo.trainerDay,
+                bookedAt: new Date(),
+            }
+            const result = await bookedTrainerCollection.insertOne(bookingDetails)
+            res.send({ bookingId: result.insertedId })
         })
 
 
