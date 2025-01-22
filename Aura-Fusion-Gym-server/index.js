@@ -32,6 +32,7 @@ async function run() {
         const userCollection = database.collection('users')
         const subscriberCollection = database.collection('subscribers')
         const bookedTrainerCollection = database.collection('bookedTrainers')
+        const classCollection = database.collection('classes')
 
         // jwt token for authorization (localStorage)
         app.post('/jwt', async (req, res) => {
@@ -205,6 +206,23 @@ async function run() {
             res.send({ bookingId: result.insertedId })
         })
 
+
+
+        // ____________________________________________________________________
+
+
+        // save all classes in the database
+        app.post('/classes', async (req, res) => {
+            const classData = req.body
+            const result = await classCollection.insertOne(classData)
+            res.send(result)
+        })
+
+        // get all classes from the database
+        app.get('/classes', async (req, res) => {
+            const classes = await classCollection.find().toArray()
+            res.send(classes);
+        })
 
 
 
