@@ -75,6 +75,8 @@ async function run() {
         })
 
 
+
+
         // updateing be a trainer data info in userCollection database for be a trainer application
         app.patch('/users-from/:email', verifyToken, async (req, res) => {
             const trainerInfo = req.body;
@@ -185,6 +187,24 @@ async function run() {
             res.send(trainer);
         })
 
+
+
+        // get all users for add new slots
+        app.get('/logedInUser', verifyToken, async (req, res) => {
+            const userEmail = req.decoded.email
+            // const { id } = req.params
+            // const query = { _id: new ObjectId(id) }
+            const query = { email: userEmail }
+            const trainerData = await userCollection.findOne(query)
+            res.send(trainerData);
+        })
+
+
+
+
+
+        // -----------------------------------------------------------------
+
         // booking trainer details in db
         app.post('/book-trainer', verifyToken, async (req, res) => {
             // const { trainerId, trainerDay } = req.body
@@ -212,14 +232,14 @@ async function run() {
 
 
         // save all classes in the database
-        app.post('/classes', async (req, res) => {
+        app.post('/classes', verifyToken, async (req, res) => {
             const classData = req.body
             const result = await classCollection.insertOne(classData)
             res.send(result)
         })
 
         // get all classes from the database
-        app.get('/classes', async (req, res) => {
+        app.get('/classes', verifyToken, async (req, res) => {
             const classes = await classCollection.find().toArray()
             res.send(classes);
         })
