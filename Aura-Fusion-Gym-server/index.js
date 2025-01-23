@@ -199,6 +199,42 @@ async function run() {
             res.send(trainerData);
         })
 
+        // Update: trainer updating his db by adding slots
+        // app.patch('/trainerAddingSlots/:email', verifyToken, async (req, res) => {
+        //     const userInfo = req.body
+        //     const email = req.decoded.email
+        //     console.log(email)
+        //     const filter = { email }
+        //     const updateTrainerData = {
+        //         $set: {
+        //             ...userInfo
+        //         },
+        //     }
+        //     const result = await userCollection.updateOne(filter, updateTrainerData)
+        //     res.send({ success: true, result })
+        // })
+
+
+        app.patch('/updateUser/:id', verifyToken, async (req, res) => {
+            const { id } = req.params;
+            const userId = { _id: new ObjectId(id) }
+            const { slotName, slotTime, selectClass } = req.body;
+
+            try {
+                const updateDoc = {
+                    $set: {
+                        slotName,
+                        slotTime,
+                        selectClass,
+                    }
+                }
+                const result = await userCollection.updateOne(userId, updateDoc);
+                res.send(result);
+            } catch (error) {
+                res.status(500).json({ message: 'Error updating user data' });
+            }
+        });
+
 
 
 
