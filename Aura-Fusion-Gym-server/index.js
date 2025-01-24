@@ -235,6 +235,23 @@ async function run() {
             }
         });
 
+        // changing trainer slots
+        app.patch('/updateUser-slots/:email', verifyToken, async (req, res) => {
+            // const { role } = req.body
+            const email = req.params.email
+            // const filter = { emaildata: email }
+            const filter = { email }
+            const updateRole = {
+                $set: {
+                    slotName: " ",
+                    slotTime: " ",
+                    selectClass: " ",
+                },
+            }
+            const result = await userCollection.updateOne(filter, updateRole)
+            res.send(result)
+        })
+
 
 
 
@@ -278,6 +295,44 @@ async function run() {
         app.get('/classes', verifyToken, async (req, res) => {
             const classes = await classCollection.find().toArray()
             res.send(classes);
+        })
+
+        // add trainer slot in classes
+        app.patch('/add-slots', verifyToken, async (req, res) => {
+            const { bookedById, bookedBy, slotName, slotTime, selectClass, bookedByImage, bookedByName } = req.body;
+            const filterClass = await classCollection.findOne({ className: selectClass })
+            const updateClassSlot = {
+                $push: {
+                    slot: {
+                        bookedById,
+                        bookedBy,
+                        bookedByImage,
+                        bookedByName,
+                        slotName,
+                        slotTime,
+                    }
+                }
+            }
+            const result = await classCollection.updateOne({ _id: filterClass._id }, updateClassSlot)
+            res.send(result);
+        })
+
+
+        // remove trainer slot from classes
+        app.patch('/remove-slots', verifyToken, async (req, res) => {
+            // const { id } = req.params;
+            // const userId = { _id: new ObjectId(id) }
+            const { className, bookedByImage, bookedByName, bookedBy, slotName, slotTime, bookedById } = req.body;
+            const filterClass = await classCollection.findOne({ className })
+            const updateClassSlot = {
+                $pull: {
+                    slot: {
+                        bookedByImage, bookedByName, bookedBy, slotName, slotTime, bookedById
+                    }
+                }
+            }
+            const result = await classCollection.updateOne({ _id: filterClass._id }, updateClassSlot)
+            res.send(result);
         })
 
 
