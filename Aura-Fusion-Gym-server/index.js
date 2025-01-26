@@ -4,6 +4,7 @@ const cors = require('cors')
 require('dotenv').config()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const port = process.env.PORT || 8002
 
 // middleware
@@ -33,6 +34,7 @@ async function run() {
         const subscriberCollection = database.collection('subscribers')
         const bookedTrainerCollection = database.collection('bookedTrainers')
         const classCollection = database.collection('classes')
+        const paymentCollection = database.collection('payments')
 
         // jwt token for authorization (localStorage)
         app.post('/jwt', async (req, res) => {
@@ -314,6 +316,15 @@ async function run() {
             res.send(result)
         })
 
+        // get book-trainer data by email
+        app.get('/book-trainer', async (req, res) => {
+            const { bookedUserEmail } = req.query
+            const query = { bookedUserEmail: bookedUserEmail }
+            const bookedTrainer = await bookedTrainerCollection.find(query).toArray()
+            res.send(bookedTrainer);
+        })
+
+
 
 
         // ____________________________________________________________________
@@ -378,6 +389,8 @@ async function run() {
 
 
 
+
+
         //save all subscriber on database
         app.post('/subscribers', async (req, res) => {
             const subscriber = req.body
@@ -385,6 +398,45 @@ async function run() {
             if (existingSubscriber) return res.send({ message: "User already exists", insertedId: null })
             const result = await subscriberCollection.insertOne(subscriber)
             res.send(result);
+        })
+
+
+
+        // Payment intent
+        app.post('/create-payment-intent', async (req, res) => {
+            const { price } = req.body
+            // const amount = parseInt(price * 100)
+            if (!price || isNaN(price)) {
+                return res.status(400).send({ error: "Invalid price format." });
+            }
+
+
+            const amount = Math.round(price * 100)
+            // console.log(amount, "amount inside")
+
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card'],
+            })
+
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+                // id: paymentIntent.id,
+                // amount: amount,
+            })
+
+
+
+        })
+
+        // post payment data to database
+        app.post('/payments', async (req, res) => {
+            const paymentInfo = req.body
+            const paymentResult = await paymentCollection.insertOne(paymentInfo)
+            console.log("Payment info", paymentInfo)
+            res.send(paymentResult);
         })
 
 
