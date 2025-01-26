@@ -77,6 +77,8 @@ async function run() {
 
 
 
+
+
         // updateing be a trainer data info in userCollection database for be a trainer application
         app.patch('/users-from/:email', verifyToken, async (req, res) => {
             const trainerInfo = req.body;
@@ -98,6 +100,15 @@ async function run() {
             const result = await userCollection.findOne(query)
             // console.log(result)
             res.send({ role: result?.role });
+        })
+
+        app.get('/users/singleUser/:email', async (req, res) => {
+            const { email } = req.params
+            // console.log(email)
+            // const query = { _id: new ObjectId(id) }
+            const result = await userCollection.findOne({ email })
+            // console.log(result)
+            res.send(result);
         })
 
 
@@ -257,26 +268,50 @@ async function run() {
 
 
         // -----------------------------------------------------------------
+        // get trainers data from db by using id
+        app.get('/single-trainer-data/:id', async (req, res) => {
+            const { id } = req.params
+            const query = { _id: new ObjectId(id) }
+            const user = await userCollection.findOne(query)
+            res.send(user);
+        })
+
+
+        // get slot name which one is added by trainer
+        app.get('/trainer-bookings/:id', verifyToken, async (req, res) => {
+            const { id } = req.params;
+            try {
+                const query = { slot: { $elemMatch: { bookedById: id } } };
+                const trainerBookings = await classCollection.find(query).toArray();
+                if (!trainerBookings.length) {
+                    return res.status(404).send({ message: 'No bookings found for this trainer.' });
+                }
+                res.send(trainerBookings);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ message: 'Failed to fetch trainer bookings.' });
+            }
+        });
+
+
+
 
         // booking trainer details in db
         app.post('/book-trainer', verifyToken, async (req, res) => {
-            // const { trainerId, trainerDay } = req.body
-            const trainerInfo = req.body
+            const updateTrainerInfo = req.body
             // getting user email
             const userEmail = req.decoded.email
-            // finding trainer by id
-            const query = { _id: new ObjectId(trainerInfo.trainerId) }
-            const trainer = await userCollection.findOne(query)
+            // const name = req.body.name
+            // console.log(userEmail)
 
             // saving trainer details on new collection db
             const bookingDetails = {
-                trainerId: new ObjectId(trainerInfo.trainerId),
-                userEmail,
-                trainerDay: trainerInfo.trainerDay,
+                ...updateTrainerInfo,
+                bookedUserEmail: userEmail,
                 bookedAt: new Date(),
             }
             const result = await bookedTrainerCollection.insertOne(bookingDetails)
-            res.send({ bookingId: result.insertedId })
+            res.send(result)
         })
 
 
@@ -300,6 +335,7 @@ async function run() {
         // add trainer slot in classes
         app.patch('/add-slots', verifyToken, async (req, res) => {
             const { bookedById, bookedBy, slotName, slotTime, selectClass, bookedByImage, bookedByName } = req.body;
+            // if (bookedById) return res.send({ message: "User not found", insertedId: 1 })
             const filterClass = await classCollection.findOne({ className: selectClass })
             const updateClassSlot = {
                 $push: {
