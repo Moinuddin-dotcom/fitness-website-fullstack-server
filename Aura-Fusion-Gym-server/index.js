@@ -35,6 +35,7 @@ async function run() {
         const bookedTrainerCollection = database.collection('bookedTrainers')
         const classCollection = database.collection('classes')
         const paymentCollection = database.collection('payments')
+        const reviewCollection = database.collection('reviews')
 
         // jwt token for authorization (localStorage)
         app.post('/jwt', async (req, res) => {
@@ -65,7 +66,8 @@ async function run() {
             const user = req.body
             const query = { email: user?.email }
             const existingUser = await userCollection.findOne(query)
-            if (existingUser) return res.send({ message: "User already exists", insertedId: null })
+            // if (existingUser) return res.send({ message: "User already exists", insertedId: null })
+            if (existingUser) return res.send(existingUser)
             const result = await userCollection.insertOne(user)
             res.send(result);
         })
@@ -435,8 +437,36 @@ async function run() {
         app.post('/payments', async (req, res) => {
             const paymentInfo = req.body
             const paymentResult = await paymentCollection.insertOne(paymentInfo)
-            console.log("Payment info", paymentInfo)
+            // console.log("Payment info", paymentInfo)
             res.send(paymentResult);
+        })
+
+        // get booked trainer & user information for payment
+
+        app.get('/payment-info/:email', async (req, res) => {
+            const { email } = req.params
+            // const query = { _id: new ObjectId(id) }
+            const query = { bookingUserEmail: email }
+            const paymentInfo = await paymentCollection.findOne(query)
+            res.send(paymentInfo);
+        })
+
+
+
+
+
+        // post review data to database
+        app.post('/reviews', async (req, res) => {
+            const reviewData = req.body
+            const review = await reviewCollection.insertOne(reviewData)
+            // console.log("Payment info", reviewData)
+            res.send(review);
+        })
+
+        // get all reviews
+        app.get('/reviews', async (req, res) => {
+            const reviews = await reviewCollection.find().toArray()
+            res.send(reviews);
         })
 
 
