@@ -36,6 +36,7 @@ async function run() {
         const classCollection = database.collection('classes')
         const paymentCollection = database.collection('payments')
         const reviewCollection = database.collection('reviews')
+        const blogCollection = database.collection('blogs')
 
         // jwt token for authorization (localStorage)
         app.post('/jwt', async (req, res) => {
@@ -66,8 +67,8 @@ async function run() {
             const user = req.body
             const query = { email: user?.email }
             const existingUser = await userCollection.findOne(query)
-            // if (existingUser) return res.send({ message: "User already exists", insertedId: null })
-            if (existingUser) return res.send(existingUser)
+            if (existingUser) return res.send({ message: "User already exists", insertedId: null })
+            // if (existingUser) return res.send(existingUser)
             const result = await userCollection.insertOne(user)
             res.send(result);
         })
@@ -76,6 +77,19 @@ async function run() {
         app.get('/users', async (req, res) => {
             const user = await userCollection.find().toArray()
             res.send(user);
+        })
+
+        // update user info
+        app.patch('/update-user-info/:email', verifyToken, async (req, res) => {
+            const updateInfo = req.body;
+            const { email } = req.params
+            const updateProfile = {
+                $set: {
+                    ...updateInfo,
+                },
+            }
+            const result = await userCollection.updateOne({ email }, updateProfile)
+            res.send(result)
         })
 
 
@@ -402,10 +416,16 @@ async function run() {
             res.send(result);
         })
 
+        // get all subscribers
+        app.get('/subscribers', async (req, res) => {
+            const subscribers = await subscriberCollection.find().toArray()
+            res.send(subscribers);
+        })
+
 
 
         // Payment intent
-        app.post('/create-payment-intent', async (req, res) => {
+        app.post('/create-payment-intent', verifyToken, async (req, res) => {
             const { price } = req.body
             // const amount = parseInt(price * 100)
             if (!price || isNaN(price)) {
@@ -434,16 +454,21 @@ async function run() {
         })
 
         // post payment data to database
-        app.post('/payments', async (req, res) => {
+        app.post('/payments', verifyToken, async (req, res) => {
             const paymentInfo = req.body
             const paymentResult = await paymentCollection.insertOne(paymentInfo)
             // console.log("Payment info", paymentInfo)
             res.send(paymentResult);
         })
 
-        // get booked trainer & user information for payment
+        // get all paymet
+        app.get('/payments', verifyToken, async (req, res) => {
+            const payments = await paymentCollection.find().toArray()
+            res.send(payments);
+        })
 
-        app.get('/payment-info/:email', async (req, res) => {
+        // get booked trainer & user information for payment
+        app.get('/payment-info/:email', verifyToken, async (req, res) => {
             const { email } = req.params
             // const query = { _id: new ObjectId(id) }
             const query = { bookingUserEmail: email }
@@ -456,7 +481,7 @@ async function run() {
 
 
         // post review data to database
-        app.post('/reviews', async (req, res) => {
+        app.post('/reviews', verifyToken, async (req, res) => {
             const reviewData = req.body
             const review = await reviewCollection.insertOne(reviewData)
             // console.log("Payment info", reviewData)
@@ -464,17 +489,38 @@ async function run() {
         })
 
         // get all reviews
-        app.get('/reviews', async (req, res) => {
+        app.get('/reviews', verifyToken, async (req, res) => {
             const reviews = await reviewCollection.find().toArray()
             res.send(reviews);
+        })
+
+        // post a new blog
+        app.post('/blogs', verifyToken, async (req, res) => {
+            const forumData = req.body
+            const blog = await blogCollection.insertOne(forumData)
+            res.send(blog);
+        })
+
+        // get blog data
+        app.get('/blogs', verifyToken, async (req, res) => {
+            const blogs = await blogCollection.find().toArray()
+            res.send(blogs)
+        })
+
+        // find blog by id
+        app.get('/blogsById/:id', verifyToken, async (req, res) => {
+            const { id } = req.params
+            const query = { _id: new ObjectId(id) }
+            const blog = await blogCollection.findOne(query)
+            res.send(blog);
         })
 
 
 
 
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
-        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+        // await client.db("admin").command({ ping: 1 });
+        // console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
