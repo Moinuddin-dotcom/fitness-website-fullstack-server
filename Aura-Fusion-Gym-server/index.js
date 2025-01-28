@@ -47,7 +47,6 @@ async function run() {
 
         // jwt middleware: verifyToken
         const verifyToken = (req, res, next) => {
-            // console.log("Inside the verifyToken:", req.headers.authorization)
             if (!req.headers.authorization) {
                 return res.status(401).send({ message: "Unauthorized access" })
             }
@@ -68,7 +67,6 @@ async function run() {
             const query = { email: user?.email }
             const existingUser = await userCollection.findOne(query)
             if (existingUser) return res.send({ message: "User already exists", insertedId: null })
-            // if (existingUser) return res.send(existingUser)
             const result = await userCollection.insertOne(user)
             res.send(result);
         })
@@ -122,10 +120,7 @@ async function run() {
 
         app.get('/users/singleUser/:email', async (req, res) => {
             const { email } = req.params
-            // console.log(email)
-            // const query = { _id: new ObjectId(id) }
             const result = await userCollection.findOne({ email })
-            // console.log(result)
             res.send(result);
         })
 
@@ -167,7 +162,6 @@ async function run() {
         app.patch('/trainer-role-update/:email', verifyToken, async (req, res) => {
             const { role } = req.body
             const email = req.params.email
-            // const filter = { emaildata: email }
             const filter = { email }
             const updateRole = {
                 $set: {
@@ -184,7 +178,6 @@ async function run() {
         app.patch('/users-role-updateForReject/:email', verifyToken, async (req, res) => {
             const rejectInfo = req.body
             const { email } = req.params
-            // const filter = { email }
             const updateRejectedUserRole = {
                 $set: {
                     ...rejectInfo, status: 'Reject',
@@ -202,9 +195,7 @@ async function run() {
             if (role) {
                 query.role = role
             }
-            // console.log("Query:", query);
             const result = await userCollection.find(query).toArray()
-            // console.log("Result:", result);
             res.send(result);
         })
 
@@ -221,27 +212,10 @@ async function run() {
         // get all users for add new slots
         app.get('/logedInUser', verifyToken, async (req, res) => {
             const userEmail = req.decoded.email
-            // const { id } = req.params
-            // const query = { _id: new ObjectId(id) }
             const query = { email: userEmail }
             const trainerData = await userCollection.findOne(query)
             res.send(trainerData);
         })
-
-        // Update: trainer updating his db by adding slots
-        // app.patch('/trainerAddingSlots/:email', verifyToken, async (req, res) => {
-        //     const userInfo = req.body
-        //     const email = req.decoded.email
-        //     console.log(email)
-        //     const filter = { email }
-        //     const updateTrainerData = {
-        //         $set: {
-        //             ...userInfo
-        //         },
-        //     }
-        //     const result = await userCollection.updateOne(filter, updateTrainerData)
-        //     res.send({ success: true, result })
-        // })
 
 
         app.patch('/updateUser/:id', verifyToken, async (req, res) => {
@@ -266,9 +240,7 @@ async function run() {
 
         // changing trainer slots
         app.patch('/updateUser-slots/:email', verifyToken, async (req, res) => {
-            // const { role } = req.body
             const email = req.params.email
-            // const filter = { emaildata: email }
             const filter = { email }
             const updateRole = {
                 $set: {
@@ -280,9 +252,6 @@ async function run() {
             const result = await userCollection.updateOne(filter, updateRole)
             res.send(result)
         })
-
-
-
 
 
         // -----------------------------------------------------------------
@@ -317,12 +286,7 @@ async function run() {
         // booking trainer details in db
         app.post('/book-trainer', verifyToken, async (req, res) => {
             const updateTrainerInfo = req.body
-            // getting user email
             const userEmail = req.decoded.email
-            // const name = req.body.name
-            // console.log(userEmail)
-
-            // saving trainer details on new collection db
             const bookingDetails = {
                 ...updateTrainerInfo,
                 bookedUserEmail: userEmail,
@@ -362,7 +326,6 @@ async function run() {
         // add trainer slot in classes
         app.patch('/add-slots', verifyToken, async (req, res) => {
             const { bookedById, bookedBy, slotName, slotTime, selectClass, bookedByImage, bookedByName } = req.body;
-            // if (bookedById) return res.send({ message: "User not found", insertedId: 1 })
             const filterClass = await classCollection.findOne({ className: selectClass })
             const updateClassSlot = {
                 $push: {
@@ -383,8 +346,6 @@ async function run() {
 
         // remove trainer slot from classes
         app.patch('/remove-slots', verifyToken, async (req, res) => {
-            // const { id } = req.params;
-            // const userId = { _id: new ObjectId(id) }
             const { className, bookedByImage, bookedByName, bookedBy, slotName, slotTime, bookedById } = req.body;
             const filterClass = await classCollection.findOne({ className })
             const updateClassSlot = {
@@ -397,14 +358,6 @@ async function run() {
             const result = await classCollection.updateOne({ _id: filterClass._id }, updateClassSlot)
             res.send(result);
         })
-
-
-
-
-
-
-
-
 
 
         //save all subscriber on database
@@ -434,7 +387,6 @@ async function run() {
 
 
             const amount = Math.round(price * 100)
-            // console.log(amount, "amount inside")
 
 
             const paymentIntent = await stripe.paymentIntents.create({
@@ -445,8 +397,6 @@ async function run() {
 
             res.send({
                 clientSecret: paymentIntent.client_secret,
-                // id: paymentIntent.id,
-                // amount: amount,
             })
 
 
@@ -457,7 +407,6 @@ async function run() {
         app.post('/payments', verifyToken, async (req, res) => {
             const paymentInfo = req.body
             const paymentResult = await paymentCollection.insertOne(paymentInfo)
-            // console.log("Payment info", paymentInfo)
             res.send(paymentResult);
         })
 
@@ -470,7 +419,6 @@ async function run() {
         // get booked trainer & user information for payment
         app.get('/payment-info/:email', verifyToken, async (req, res) => {
             const { email } = req.params
-            // const query = { _id: new ObjectId(id) }
             const query = { bookingUserEmail: email }
             const paymentInfo = await paymentCollection.findOne(query)
             res.send(paymentInfo);
@@ -484,7 +432,6 @@ async function run() {
         app.post('/reviews', verifyToken, async (req, res) => {
             const reviewData = req.body
             const review = await reviewCollection.insertOne(reviewData)
-            // console.log("Payment info", reviewData)
             res.send(review);
         })
 
