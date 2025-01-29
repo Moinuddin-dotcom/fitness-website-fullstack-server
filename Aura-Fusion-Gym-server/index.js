@@ -318,7 +318,7 @@ async function run() {
         })
 
         // get all classes from the database
-        app.get('/classes', verifyToken, async (req, res) => {
+        app.get('/classes', async (req, res) => {
             const classes = await classCollection.find().toArray()
             res.send(classes);
         })
@@ -436,7 +436,7 @@ async function run() {
         })
 
         // get all reviews
-        app.get('/reviews', verifyToken, async (req, res) => {
+        app.get('/reviews', async (req, res) => {
             const reviews = await reviewCollection.find().toArray()
             res.send(reviews);
         })
@@ -449,7 +449,7 @@ async function run() {
         })
 
         // get blog data
-        app.get('/blogs', verifyToken, async (req, res) => {
+        app.get('/blogs', async (req, res) => {
             const blogs = await blogCollection.find().toArray()
             res.send(blogs)
         })
