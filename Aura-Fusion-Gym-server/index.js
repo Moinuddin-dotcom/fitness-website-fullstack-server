@@ -323,6 +323,9 @@ async function run() {
             res.send(classes);
         })
 
+        // adding search functionality
+        app.get('/classes')
+
         // add trainer slot in classes
         app.patch('/add-slots', verifyToken, async (req, res) => {
             const { bookedById, bookedBy, slotName, slotTime, selectClass, bookedByImage, bookedByName } = req.body;
