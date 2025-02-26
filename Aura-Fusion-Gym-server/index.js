@@ -318,13 +318,39 @@ async function run() {
         })
 
         // get all classes from the database
-        app.get('/classes', async (req, res) => {
-            const classes = await classCollection.find().toArray()
-            res.send(classes);
-        })
+        // app.get('/classes', async (req, res) => {
+        //     const classes = await classCollection.find().toArray()
+        //     res.send(classes);
+        // })
 
         // adding search functionality
-        app.get('/classes')
+        // app.get('/classes/search', async (req, res) => {
+        //     const { query } = req.query
+        //     const result = await classCollection.find({
+        //         name: { $regex: query, $options: 'i' } // Case-insensitive search
+        //     }).toArray()
+        //     res.send(result);
+        // })
+        app.get('/classes', async (req, res) => {
+            try {
+                const search = req.query?.search || ""; // Get search query from URL params
+                console.log(search)
+                let query = {}
+                if (search) {
+                    query.className = { $regex: search, $options: "i" }
+                }
+                console.log(query)
+                const classes = await classCollection.find(query).toArray();
+                console.log(classes)
+
+                res.send(classes);
+            } catch (error) {
+                res.status(500).json({ message: "Internal Server Error" });
+            }
+        });
+
+
+
 
         // add trainer slot in classes
         app.patch('/add-slots', verifyToken, async (req, res) => {
